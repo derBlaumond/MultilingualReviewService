@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io/ioutil"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -40,6 +41,11 @@ import (
 type platformDetails struct {
 	css      string
 	provider string
+}
+
+type Review struct {
+	Author string `json:"author"`
+	Text   string `json:"text"`
 }
 
 var (
@@ -141,30 +147,94 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 	}
 }
 
-type MockReview struct {
-    UserId    string
-    Comment   string
-    Rating    int32
-    Timestamp string
-}
+// type MockReview struct {
+//     UserId    string
+//     Comment   string
+//     Rating    int32
+//     Timestamp string
+// }
 
-func mockReviews() []*MockReview {
-    return []*MockReview{
-        {
-            UserId:    "user1",
-            Comment:   "The best!",
-            Rating:    5,
-            Timestamp: "2024-01-01T12:00:00Z",
-        },
-        {
-            UserId:    "user42",
-            Comment:   "Good quality, but a bit weird.",
-            Rating:    4,
-            Timestamp: "2024-01-02T15:00:00Z",
-        },
+// func mockReviews() []*MockReview {
+//     return []*MockReview{
+//         {
+//             UserId:    "user1",
+//             Comment:   "The best!",
+//             Rating:    5,
+//             Timestamp: "2024-01-01T12:00:00Z",
+//         },
+//         {
+//             UserId:    "user42",
+//             Comment:   "Good quality, but a bit weird.",
+//             Rating:    4,
+//             Timestamp: "2024-01-02T15:00:00Z",
+//         },
+//     }
+// }
+
+func getReviews(productID string) ([]Review, error) {
+    if reviewServiceAddr == "" {
+        return nil, fmt.Errorf("reviewServiceAddr not set")
     }
+    url := fmt.Sprintf("http://%s/reviews?productID=%s", reviewServiceAddr, productID)
+    resp, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("reviewservice returned status %d", resp.StatusCode)
+    }
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return nil, err
+    }
+    var reviews []Review
+    if err := json.Unmarshal(body, &reviews); err != nil {
+        return nil, err
+    }
+    return reviews, nil
 }
 
+func translateText(text, lang string) (string, error) {
+    if translationServiceAddr == "" {
+        return "", fmt.Errorf("translationServiceAddr not set")
+    }
+    url := fmt.Sprintf("http://%s/translate?text=%s&target=%s", translationServiceAddr, text, lang)
+    resp, err := http.Get(url)
+    if err != nil {
+        return "", err
+    }
+    defer resp.Body.Close()
+    if resp.StatusCode != http.StatusOK {
+        return "", fmt.Errorf("translationservice returned status %d", resp.StatusCode)
+    }
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return "", err
+    }
+    return string(body), nil
+}
+
+func translateReviewHandler(w http.ResponseWriter, r *http.Request) {
+    if err := r.ParseForm(); err != nil {
+        http.Error(w, "unable to parse form", http.StatusBadRequest)
+        return
+    }
+    text := r.FormValue("text")
+    lang := r.FormValue("lang")
+    if text == "" || lang == "" {
+        http.Error(w, "missing text or lang parameter", http.StatusBadRequest)
+        return
+    }
+
+    translated, err := translateText(text, lang)
+    if err != nil {
+        log.Printf("Translation failed: %v", err)
+        http.Error(w, "translation failed", http.StatusInternalServerError)
+        return
+    }
+    w.Write([]byte(translated))
+}
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
@@ -207,15 +277,23 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 
 	// HERE: add review box?
 
-    reviews := []map[string]string{
-        {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
-        {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
-    }
+    // reviews := []map[string]string{
+    //     {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
+    //     {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
+    // }
 
 	product := struct {
 		Item  *pb.Product
 		Price *pb.Money
+		
 	}{p, price}
+
+    // Fetch reviews for the product
+    reviews, err := getReviews(id)
+    if err != nil {
+        log.Printf("Warning: could not fetch reviews for product %s: %v", id, err)
+        reviews = nil // fail gracefully by showing no reviews
+    }
 
 	// templates.ExecuteTemplate(w, "product.html", map[string]interface{}{
 	// 	"product": product,

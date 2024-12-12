@@ -84,8 +84,11 @@ type frontendServer struct {
 	collectorAddr string
 	collectorConn *grpc.ClientConn
 
-	revSvcAddr string
-	revSvcConn *grpc.ClientConn
+	reviewSvcAddr string 				//add Review address
+	reviewSvcConn *grpc.ClientConn
+
+	translationSvcAddr string 			// add Translation address	
+	translationSvcConn *grpc.ClientConn
 
 	shoppingAssistantSvcAddr string
 }
@@ -139,6 +142,8 @@ func main() {
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
 	mustMapEnv(&svc.shoppingAssistantSvcAddr, "SHOPPING_ASSISTANT_SERVICE_ADDR")
+	mustMapEnv(&svc.reviewSvcAddr, "REVIEW_SERVICE_ADDR")
+	mustMapEnv(&svc.translationSvcAddr, "TRANSLATION_SERVICE_ADDR")
 
 	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
 	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
@@ -147,6 +152,8 @@ func main() {
 	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
 	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
 	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	mustConnGRPC(ctx, &svc.reviewSvcConn, svc.reviewSvcAddr)
+	mustConnGRPC(ctx, &svc.translationSvcConn, svc.translationSvcAddr)
 
 	r := mux.NewRouter()
 	r.HandleFunc(baseUrl + "/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
@@ -164,6 +171,7 @@ func main() {
 	r.HandleFunc(baseUrl + "/product-meta/{ids}", svc.getProductByID).Methods(http.MethodGet)
 	r.HandleFunc(baseUrl + "/bot", svc.chatBotHandler).Methods(http.MethodPost)
 	r.HandleFunc(baseUrl + "/submit-review", svc.submitReviewHandler)
+	r.HandleFunc(baseurl + "/translateReview", svc.translateReviewHandler)
 
 
 	var handler http.Handler = r

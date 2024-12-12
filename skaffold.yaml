@@ -46,6 +46,10 @@ build:
     context: src/frontend
   - image: adservice
     context: src/adservice
+  - image: reviewservice
+    context: src/reviewservice
+  - image: translationservice
+    context: src/translationservice
   tagPolicy:
     gitCommit: {}
   local:
