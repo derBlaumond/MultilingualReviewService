@@ -73,6 +73,37 @@
     </div>
   </div>
   <div>
+    <div class="container">
+      <h3>Customer Reviews</h3>
+      <!-- Display reviews -->
+      {{range .reviews}}
+          <div>
+              <p><strong>User:</strong> {{.User}}</p>
+              <p><strong>Comment:</strong> {{.Comment}}</p>
+              <p><strong>Rating:</strong> {{.Rating}}/5</p>
+              <p><strong>Date:</strong> {{.Timestamp}}</p>
+          </div>
+      {{else}}
+          <p>No reviews yet. Be the first to write one!</p>
+      {{end}}
+
+      <!-- Review submission form -->
+      <h4>Write a Review</h4>
+      <form method="POST" action="/submit-review">
+          <textarea name="comment" rows="4" cols="50" placeholder="Write your review here..." required></textarea><br>
+          <label for="rating">Rating:</label>
+          <select name="rating" id="rating" required>
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Poor</option>
+              <option value="1">1 - Terrible</option>
+          </select><br>
+          <button type="submit">Submit Review</button>
+      </form>
+    </div>
+  </div>
+  <div>
     {{ if $.recommendations}}
       {{ template "recommendations" $ }}
     {{ end }}

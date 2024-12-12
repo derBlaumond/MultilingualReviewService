@@ -141,6 +141,31 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 	}
 }
 
+type MockReview struct {
+    UserId    string
+    Comment   string
+    Rating    int32
+    Timestamp string
+}
+
+func mockReviews() []*MockReview {
+    return []*MockReview{
+        {
+            UserId:    "user1",
+            Comment:   "The best!",
+            Rating:    5,
+            Timestamp: "2024-01-01T12:00:00Z",
+        },
+        {
+            UserId:    "user42",
+            Comment:   "Good quality, but a bit weird.",
+            Rating:    4,
+            Timestamp: "2024-01-02T15:00:00Z",
+        },
+    }
+}
+
+
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
 	id := mux.Vars(r)["id"]
@@ -180,11 +205,22 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		log.WithField("error", err).Warn("failed to get product recommendations")
 	}
 
+	// HERE: add review box?
+
+    reviews := []map[string]string{
+        {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
+        {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
+    }
+
 	product := struct {
 		Item  *pb.Product
 		Price *pb.Money
 	}{p, price}
 
+	// templates.ExecuteTemplate(w, "product.html", map[string]interface{}{
+	// 	"product": product,
+	// 	"reviews": reviews, // This must be correctly populated
+	// })
 	// Fetch packaging info (weight/dimensions) of the product
 	// The packaging service is an optional microservice you can run as part of a Google Cloud demo.
 	var packagingInfo *PackagingInfo = nil
@@ -203,10 +239,36 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		"recommendations": recommendations,
 		"cart_size":       cartSize(cart),
 		"packagingInfo":   packagingInfo,
+		"reviews": 		   reviews,
 	})); err != nil {
 		log.Println(err)
 	}
 }
+
+func (fe *frontendServer) submitReviewHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // Parse form data
+    err := r.ParseForm()
+    if err != nil {
+        http.Error(w, "Error parsing form", http.StatusBadRequest)
+        return
+    }
+
+    comment := r.FormValue("comment")
+    rating := r.FormValue("rating")
+    productID := r.URL.Query().Get("id") // You might need to ensure product ID is passed
+
+    // Send review data to the review service (placeholder logic here)
+    log.Printf("Received review for Product ID %s: %s (%s/5)", productID, comment, rating)
+
+    // Redirect back to the product page
+    http.Redirect(w, r, fmt.Sprintf("/product?id=%s", productID), http.StatusSeeOther)
+}
+
 
 func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)

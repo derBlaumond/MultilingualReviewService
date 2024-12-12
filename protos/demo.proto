@@ -260,3 +260,43 @@ message Ad {
     // short advertisement text to display.
     string text = 2;
 }
+
+// -----------Review Service----------------
+
+service ReviewService {
+    rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse);
+    rpc AddReview(AddReviewRequest) returns (AddReviewResponse);
+}
+
+message Translation {
+    string language = 1; 
+    string comment = 2;  
+}
+
+message Review {
+    string user_id = 1;
+    string comment = 2;       // Original review text.
+    int32 rating = 3;         // Rating (e.g., 1-5 stars).
+    string timestamp = 4;     // Time of review submission.
+    repeated Translation translations = 5; // Translations for the review.
+}
+
+message GetReviewsRequest {
+    string product_id = 1; 
+}
+
+message GetReviewsResponse {
+    repeated Review reviews = 1; 
+}
+
+message AddReviewRequest {
+    string product_id = 1;  
+    string user_id = 2;     
+    string comment = 3;     
+    int32 rating = 4;       
+    repeated string target_languages = 5; // Desired translation languages.
+}
+
+message AddReviewResponse {
+    string review_id = 1;   
+}
