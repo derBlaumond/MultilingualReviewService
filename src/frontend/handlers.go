@@ -171,11 +171,11 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 //     }
 // }
 
-func getReviews(productID string) ([]Review, error) {
-    if reviewServiceAddr == "" {
-        return nil, fmt.Errorf("reviewServiceAddr not set")
+func (fe *frontendServer) getReviews(productID string) ([]Review, error) {
+    if fe.reviewSvcAddr == "" {
+        return nil, fmt.Errorf("reviewSvcAddr not set")
     }
-    url := fmt.Sprintf("http://%s/reviews?productID=%s", reviewServiceAddr, productID)
+    url := fmt.Sprintf("http://%s/reviews?productID=%s", fe.reviewSvcAddr, productID)
     resp, err := http.Get(url)
     if err != nil {
         return nil, err
@@ -195,11 +195,12 @@ func getReviews(productID string) ([]Review, error) {
     return reviews, nil
 }
 
-func translateText(text, lang string) (string, error) {
-    if translationServiceAddr == "" {
-        return "", fmt.Errorf("translationServiceAddr not set")
+
+func (fe *frontendServer) translateText(text, lang string) (string, error) {
+    if fe.translationSvcAddr == "" {
+        return "", fmt.Errorf("translationSvcAddr not set")
     }
-    url := fmt.Sprintf("http://%s/translate?text=%s&target=%s", translationServiceAddr, text, lang)
+    url := fmt.Sprintf("http://%s/translate?text=%s&target=%s", fe.translationSvcAddr, text, lang)
     resp, err := http.Get(url)
     if err != nil {
         return "", err
@@ -215,7 +216,8 @@ func translateText(text, lang string) (string, error) {
     return string(body), nil
 }
 
-func translateReviewHandler(w http.ResponseWriter, r *http.Request) {
+
+func (fe *frontendServer) translateReviewHandler(w http.ResponseWriter, r *http.Request) {
     if err := r.ParseForm(); err != nil {
         http.Error(w, "unable to parse form", http.StatusBadRequest)
         return
@@ -227,14 +229,14 @@ func translateReviewHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    translated, err := translateText(text, lang)
+    translated, err := fe.translateText(text, lang)
     if err != nil {
-        log.Printf("Translation failed: %v", err)
         http.Error(w, "translation failed", http.StatusInternalServerError)
         return
     }
     w.Write([]byte(translated))
 }
+
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
 	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
@@ -277,10 +279,10 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 
 	// HERE: add review box?
 
-    // reviews := []map[string]string{
-    //     {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
-    //     {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
-    // }
+    reviews := []map[string]string{
+        {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
+        {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
+    }
 
 	product := struct {
 		Item  *pb.Product
@@ -289,11 +291,12 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 	}{p, price}
 
     // Fetch reviews for the product
-    reviews, err := getReviews(id)
-    if err != nil {
-        log.Printf("Warning: could not fetch reviews for product %s: %v", id, err)
-        reviews = nil // fail gracefully by showing no reviews
-    }
+	// reviews, err := fe.getReviews(id)
+	// if err != nil {
+	// 	log.Printf("Warning: could not fetch reviews for product %s: %v", id, err)
+	// 	reviews = nil // fail gracefully by showing no reviews
+	// }
+	
 
 	// templates.ExecuteTemplate(w, "product.html", map[string]interface{}{
 	// 	"product": product,

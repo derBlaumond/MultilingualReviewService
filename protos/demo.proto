@@ -265,7 +265,7 @@ message Ad {
 
 service ReviewService {
     rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse);
-    rpc AddReview(AddReviewRequest) returns (AddReviewResponse);
+    rpc SubmitReview(AddReviewRequest) returns (AddReviewResponse);
 }
 
 message Translation {
@@ -299,4 +299,11 @@ message AddReviewRequest {
 
 message AddReviewResponse {
     string review_id = 1;   
+}
+
+//-------- Translation Service
+
+service TranslationService {
+    rpc TranslateText(TranslationTextRequest) returns (TranslateTextResponse);
+    rpc GetTranslations(GetTranslationRequest) returns (GetTranslationResponse);
 }
