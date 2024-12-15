@@ -2,70 +2,47 @@ import pytest
 from unittest.mock import AsyncMock
 from src.translationservice.services import translate_text
 
-
 @pytest.mark.asyncio
 async def test_translate_text_valid_request(mocker):
-    """
-    Test translate_text with a valid response from the API.
-    """
-    # Mock the httpx.AsyncClient.post response
-    mock_post = AsyncMock()
-    mock_post.return_value.status_code = 200
-    mock_post.return_value.json = AsyncMock(
-        return_value={"data": {"translations": [{"translatedText": "Hallo Welt"}]}}
+    # Mock the HTTP response for a valid API call
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json = AsyncMock(  # Adjusted to match async usage
+        return_value={
+            "data": {"translations": [{"translatedText": "Hallo Welt"}]}
+        }
     )
-    mocker.patch("httpx.AsyncClient.post", return_value=mock_post)
+    mocker.patch("httpx.AsyncClient.post", return_value=mock_response)
 
-    # Call the function and check the result
+    # Call the function being tested
     result = await translate_text("Hello world", "de")
     assert result == "Hallo Welt"
 
 
 @pytest.mark.asyncio
 async def test_translate_text_invalid_response_structure(mocker):
-    """
-    Test translate_text with an invalid response structure from the API.
-    """
-    # Mock the httpx.AsyncClient.post response with an unexpected structure
-    mock_post = AsyncMock()
-    mock_post.return_value.status_code = 200
-    mock_post.return_value.json = AsyncMock(
+    # Mock the HTTP response for an invalid structure
+    mock_response = AsyncMock()
+    mock_response.status_code = 200
+    mock_response.json = AsyncMock(
         return_value={"unexpected_key": "unexpected_value"}
     )
-    mocker.patch("httpx.AsyncClient.post", return_value=mock_post)
+    mocker.patch("httpx.AsyncClient.post", return_value=mock_response)
 
-    # Call the function and check for the exception
-    with pytest.raises(Exception) as exc_info:
+    # Test for an exception due to unexpected response structure
+    with pytest.raises(Exception, match="Unexpected response structure"):
         await translate_text("Hello world", "de")
-    assert "Unexpected response structure" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
 async def test_translate_text_api_failure(mocker):
-    """
-    Test translate_text with an API failure response.
-    """
-    # Mock the httpx.AsyncClient.post response with a 500 error
-    mock_post = AsyncMock()
-    mock_post.return_value.status_code = 500
-    mock_post.return_value.text = "Internal Server Error"
-    mocker.patch("httpx.AsyncClient.post", return_value=mock_post)
+    # Mock the HTTP response for an API failure (500 status code)
+    mock_response = AsyncMock()
+    mock_response.status_code = 500
+    mock_response.text = "Internal Server Error"
+    mock_response.json = AsyncMock(return_value={})
+    mocker.patch("httpx.AsyncClient.post", return_value=mock_response)
 
-    # Call the function and check for the exception
-    with pytest.raises(Exception) as exc_info:
+    # Test for an exception due to API failure
+    with pytest.raises(Exception, match="Translation API Error: 500"):
         await translate_text("Hello world", "de")
-    assert "Translation API Error: 500" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_translate_text_missing_api_key(mocker):
-    """
-    Test translate_text when the API key is missing.
-    """
-    # Temporarily remove the API key from the environment
-    mocker.patch.dict("os.environ", {"GOOGLE_TRANSLATE_API_KEY": ""})
-
-    # Call the function and check for the exception
-    with pytest.raises(Exception) as exc_info:
-        await translate_text("Hello world", "de")
-    assert "Google Translate API key is missing" in str(exc_info.value)

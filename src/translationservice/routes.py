@@ -3,26 +3,30 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from .services import translate_text  # Relative import
 from .cache import Cache  # Relative import
+from fastapi import HTTPException
+
 
 router = APIRouter()
 
 # Initialize cache for storing translations
 cache = Cache()
 
+SUPPORTED_LANGUAGES = ["de", "en"]
+
 # Define the request schema using Pydantic
 class TranslationRequest(BaseModel):
     text: Annotated[str, Field(min_length=1, max_length=500)]  # Limit text size to prevent abuse
     targetLanguage: Annotated[str, Field(pattern="^[a-z]{2}$")]  # Expect ISO 639-1 language codes (e.g., "en", "de")
 
-    @field_validator("targetLanguage")
-    def validate_language(cls, value):
-        """
-        Validate that the targetLanguage is supported.
-        """
-        supported_languages = ["de"]  # Only German is supported
-        if value not in supported_languages:
-            raise ValueError(f"Language '{value}' is not supported")
-        return value
+    # @field_validator("targetLanguage")
+    # def validate_language(cls, value):
+    #     """
+    #     Validate that the targetLanguage is supported.
+    #     """
+    #     supported_languages = ["de"]  # Only German is supported
+    #     if value not in supported_languages:
+    #         raise ValueError(f"Language '{value}' is not supported")
+    #     return value
 
 
 # Define the translation endpoint
@@ -43,6 +47,13 @@ async def translate(request: TranslationRequest):
         dict: A dictionary containing the translated text.
     """
     try:
+        # Validate that the target language is supported
+        if request.targetLanguage not in SUPPORTED_LANGUAGES:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Language '{request.targetLanguage}' is not supported"
+            )
+
         # Check if the translation is already in the cache
         cache_key = f"{request.text}:{request.targetLanguage}"
         if cache_key in cache:

@@ -1,46 +1,32 @@
-from collections import OrderedDict
-from typing import Optional
-
-class Cache:
+class Cache(dict):
     """
-    A simple in-memory cache with optional size limit and LRU eviction.
+    A simple cache implementation using a dictionary.
     """
-    def __init__(self, max_size: Optional[int] = 100):
-        self.cache = OrderedDict()
-        self.max_size = max_size
 
-    def __contains__(self, key):
-        return key in self.cache
+    def __init__(self):
+        super().__init__()
 
-    def __getitem__(self, key):
-        # Move key to the end to mark it as recently used
-        value = self.cache.pop(key)
-        self.cache[key] = value
-        return value
+    def __contains__(self, key: str) -> bool:
+        """
+        Check if a key exists in the cache.
+        """
+        return key in self.keys()
 
-    def __setitem__(self, key, value):
-        # Evict the oldest entry if the cache exceeds its size limit
-        if self.max_size and len(self.cache) >= self.max_size:
-            self.cache.popitem(last=False)
-        self.cache[key] = value
+    def __setitem__(self, key: str, value: str):
+        """
+        Add a key-value pair to the cache.
+        """
+        super().__setitem__(key, value)
 
-    def clear(self):
-        self.cache.clear()
-
-
+    def __getitem__(self, key: str) -> str:
+        """
+        Retrieve a value from the cache by key.
+        """
+        return super().__getitem__(key)
+    
 cache = {}
 
 async def translate_text_with_cache(text: str, target_language: str) -> str:
-    """
-    Translates text to the target language and caches the result.
-
-    Args:
-        text (str): The text to translate.
-        target_language (str): The target language code (e.g., 'en', 'de').
-
-    Returns:
-        str: The translated text.
-    """
     cache_key = f"{text}:{target_language}"
     if cache_key in cache:
         return cache[cache_key]
