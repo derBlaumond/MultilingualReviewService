@@ -1,8 +1,8 @@
 from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, field_validator
-from services import translate_text
-from cache import Cache
+from .services import translate_text  # Relative import
+from .cache import Cache  # Relative import
 
 router = APIRouter()
 
@@ -12,14 +12,14 @@ cache = Cache()
 # Define the request schema using Pydantic
 class TranslationRequest(BaseModel):
     text: Annotated[str, Field(min_length=1, max_length=500)]  # Limit text size to prevent abuse
-    targetLanguage: Annotated[str, Field(regex="^[a-z]{2}$")]  # Expect ISO 639-1 language codes (e.g., "en", "fr")
+    targetLanguage: Annotated[str, Field(pattern="^[a-z]{2}$")]  # Expect ISO 639-1 language codes (e.g., "en", "de")
 
     @field_validator("targetLanguage")
     def validate_language(cls, value):
         """
         Validate that the targetLanguage is supported.
         """
-        supported_languages = ["en", "fr", "de", "es"]  # Example supported languages
+        supported_languages = ["de"]  # Only German is supported
         if value not in supported_languages:
             raise ValueError(f"Language '{value}' is not supported")
         return value
@@ -29,8 +29,8 @@ class TranslationRequest(BaseModel):
 @router.post(
     "/translate",
     summary="Translate text to the target language",
-    response_model=dict,  # Specify response model for better OpenAPI documentation
-    status_code=200,  # Explicitly state the success status code
+    response_model=dict,
+    status_code=200,
 )
 async def translate(request: TranslationRequest):
     """
