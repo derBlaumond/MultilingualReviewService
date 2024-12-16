@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package reviewservice;
+
+// Review message definition
+message Review {
+  string id = 1;
+  int32 product_id = 2;
+  int32 user_id = 3;
+  int32 rating = 4;
+  string content = 5;
+  string language = 6;
+  map<string, string> translations = 7; // Key: language code, Value: translation
+}
+
+// Request for adding a review
+message AddReviewRequest {
+  Review review = 1;
+}
+
+// Response for adding a review
+message AddReviewResponse {
+  string message = 1;
+  string id = 2;
+}
+
+// Request for retrieving reviews
+message GetReviewsRequest {
+  int32 product_id = 1;
+  string language = 2;
+}
+
+// Response for retrieving reviews
+message GetReviewsResponse {
+  repeated Review reviews = 1;
+}
+
+// Service definition
+service ReviewService {
+  rpc AddReview (AddReviewRequest) returns (AddReviewResponse);
+  rpc GetReviews (GetReviewsRequest) returns (GetReviewsResponse);
+}
