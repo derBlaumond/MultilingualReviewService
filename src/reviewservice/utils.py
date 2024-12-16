@@ -2,6 +2,9 @@ import os
 import httpx
 from bson.objectid import ObjectId
 from .database import reviews_collection
+from dotenv import load_dotenv
+
+load_dotenv()
 
 async def trigger_translation(review):
     """
@@ -10,6 +13,7 @@ async def trigger_translation(review):
     """
     target_languages = [review["language"], "fr", "de"]  # List of target languages to translate to
     api_key = os.getenv("GOOGLE_TRANSLATE_API_KEY")
+    headers = {"Authorization": f"Bearer {api_key}"}
 
     try:
         
@@ -17,13 +21,12 @@ async def trigger_translation(review):
 
             payload = {
                 "text": review["content"],
-                "targetLanguage": language,
-                "key": api_key
+                "targetLanguage": language
             }
 
             # Make asynchronous HTTP call to TranslationService
             async with httpx.AsyncClient() as client:
-                response = await client.post("http://translationservice:8001/translate", json=payload)
+                response = await client.post("http://translationservice:8001/translate", headers=headers,json=payload)
                 response.raise_for_status()
 
             # Extract the translated text from the response
