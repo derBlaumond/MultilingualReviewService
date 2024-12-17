@@ -1,20 +1,18 @@
-FROM python:3.10-slim
+# Base image with Python
+FROM python:3.9-slim
 
-# Set environment variables to disable buffering and support UTF-8 encoding
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Set the working directory
+WORKDIR /app
 
-# Set the working directory inside the container
-WORKDIR /translationservice
-
-# Install dependencies
+# Copy requirements.txt and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code to the working directory
+# Copy the service code into the container
 COPY . .
 
-# Expose the service port 
+# Expose the port the service listens on
 EXPOSE 8080
 
+# Command to run the translation service
 CMD ["python", "server.py"]
