@@ -1,6 +1,6 @@
 import grpc
 from concurrent import futures
-from reviewservice import demo_pb2, demo_pb2_grpc
+import demo_pb2, demo_pb2_grpc
 from reviewservice.database import reviews_collection
 
 # gRPC Server implementation
