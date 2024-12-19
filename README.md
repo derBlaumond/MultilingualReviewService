@@ -1,5 +1,15 @@
 # MultilingualReviewService
 
+As the Backend Developer for ReviewService, my primary responsibilities are to develop a fully
+functional ReviewService API, integrate it with MongoDB, and ensure seamless communication with the
+TranslationService.
+
+Tools needed:
+FastAPI 
+Python
+httpx
+MongoDB
+
 Guide how to test the reviewservice locally without frontend and translationservice integration.
 
 1)Install MongoDB Compass. To start mongodb server go in command line
