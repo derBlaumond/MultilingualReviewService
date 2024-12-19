@@ -75,12 +75,8 @@
   <div>
     <div class="container">
       <!-- Display reviews -->
-      {{range .reviews}}
-          <div>
-              <p><strong>User:</strong> {{.UserId}}</p>
-              <p><strong>Comment:</strong> {{.Comment}}</p>
-              <p><strong>Rating:</strong> {{.Rating}}/5</p>
-          </div>
+      {{ if $.reviews}}
+        {{ template "reviews" $ }}
       {{else}}
           <p>No reviews yet. Be the first to write one!</p>
       {{end}}
