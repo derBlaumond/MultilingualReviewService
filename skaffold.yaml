@@ -48,8 +48,8 @@ build:
     context: src/adservice
   - image: reviewservice
     context: src/reviewservice
-  - image: translationservice
-    context: src/translationservice
+  #- image: translationservice
+  #  context: src/translationservice
   tagPolicy:
     gitCommit: {}
   local:

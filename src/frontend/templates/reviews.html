@@ -1,41 +1,14 @@
-<!--
 {{ define "reviews" }}
-<section class="reviews">
-    <div class="container">
-      <div class="row">
-        <div class="col-xl-10 offset-xl-1">
-          <h2>Reviews:</h2>
-          <div class="row">
-            {{ range .reviews }}
-            <div class="col-md-3">
-              <div>
-                <a href="{{ $.baseUrl }}/product/{{.Id}}">
-                  <img alt="" src="{{ $.baseUrl }}{{.Picture}}">
-                </a>
-                <div>
-                  <h5>
-                    {{ .Name }}
-                  </h5>
-                </div>
-              </div>
-            </div>
-            {{ end }}
-          </div>
+  <div class="reviews">
+    <h3>Customer Reviews</h3>
+    {{range .Reviews}}
+        <div class="review">
+            <!-- <p><strong>Product:</strong> {{.Id}}</p> -->
+            <p><strong>User:</strong> {{.user_id}}</p>
+            <p><strong>Comment:</strong> {{.comment}}</p>
+            <p><strong>Rating:</strong> {{.rating}}/5</p>
         </div>
-      </div>
-    </div>
-</section>
+        <hr>
+    {{end}}
+  </div>
 {{ end }}
--->
-<div class="reviews">
-  <h3>Customer Reviews</h3>
-  {{range .Reviews}}
-      <div class="review">
-          <p><strong>User:</strong> {{.UserId}}</p>
-          <p><strong>Comment:</strong> {{.Comment}}</p>
-          <p><strong>Rating:</strong> {{.Rating}}/5</p>
-          <p><strong>Date:</strong> {{.Timestamp}}</p>
-      </div>
-      <hr>
-  {{end}}
-</div>

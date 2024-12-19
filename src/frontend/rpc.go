@@ -54,6 +54,8 @@ func (fe *frontendServer) getProduct(ctx context.Context, id string) (*pb.Produc
 	return resp, err
 }
 
+
+
 func (fe *frontendServer) getCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
 	resp, err := pb.NewCartServiceClient(fe.cartSvcConn).GetCart(ctx, &pb.GetCartRequest{UserId: userID})
 	return resp.GetItems(), err
@@ -115,6 +117,42 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 	}
 	return out, err
 }
+func (fe *frontendServer) submitReview(ctx context.Context, productID, userID string, comment string, rating int32) error {
+    client := pb.NewReviewServiceClient(fe.reviewSvcConn) // Create gRPC client
+
+    // Build the gRPC request
+    req := &pb.SubmitReviewRequest{
+        ProductId: productID,
+		UserId:    userID,
+        Comment:   comment,
+        Rating:    rating,
+    }
+
+    // Perform the gRPC call
+    _, err := client.SubmitReview(ctx, req)
+    if err != nil {
+        return errors.Wrap(err, "failed to submit review via gRPC")
+    }
+    return nil
+}
+
+
+func (fe *frontendServer) getReviews(ctx context.Context, productID string) ([]*pb.Review, error) {
+    // Create a gRPC client for the review service
+    client := pb.NewReviewServiceClient(fe.reviewSvcConn)
+    
+    // Call the GetReviews RPC
+    resp, err := client.GetReviews(ctx, &pb.GetReviewsRequest{
+        ProductId: productID,
+    })
+    if err != nil {
+        return nil, errors.Wrapf(err, "failed to fetch reviews for product %s", productID)
+    }
+    
+    return resp.GetReviews(), nil
+}
+
+
 
 func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)

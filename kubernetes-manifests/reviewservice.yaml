@@ -17,6 +17,11 @@ spec:
         image: reviewservice
         ports:
         - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          value: "mongodb://mongo-service:27017/reviews" # Example database URL
+        - name: DEBUG
+          value: "true" # Example debug mode
 ---
 apiVersion: v1
 kind: Service

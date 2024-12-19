@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 8080
 
 # Command to run the translation service
-CMD ["python", "server.py"]
+CMD ["python", "routes.py"]

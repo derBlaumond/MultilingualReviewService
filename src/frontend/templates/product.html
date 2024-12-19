@@ -74,14 +74,12 @@
   </div>
   <div>
     <div class="container">
-      <h3>Customer Reviews</h3>
       <!-- Display reviews -->
       {{range .reviews}}
           <div>
-              <p><strong>User:</strong> {{.User}}</p>
+              <p><strong>User:</strong> {{.UserId}}</p>
               <p><strong>Comment:</strong> {{.Comment}}</p>
               <p><strong>Rating:</strong> {{.Rating}}/5</p>
-              <p><strong>Date:</strong> {{.Timestamp}}</p>
           </div>
       {{else}}
           <p>No reviews yet. Be the first to write one!</p>
@@ -89,7 +87,8 @@
 
       <!-- Review submission form -->
       <h4>Write a Review</h4>
-      <form method="POST" action="/submit-review">
+      <form method="POST" action="{{ $.baseUrl }}/submit-review">
+        <input type="hidden" name="product_id" value="{{$.product.Item.Id}}" />
           <textarea name="comment" rows="4" cols="50" placeholder="Write your review here..." required></textarea><br>
           <label for="rating">Rating:</label>
           <select name="rating" id="rating" required>

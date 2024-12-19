@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"io/ioutil"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -41,11 +40,6 @@ import (
 type platformDetails struct {
 	css      string
 	provider string
-}
-
-type Review struct {
-	Author string `json:"author"`
-	Text   string `json:"text"`
 }
 
 var (
@@ -171,71 +165,49 @@ func (plat *platformDetails) setPlatformDetails(env string) {
 //     }
 // }
 
-func (fe *frontendServer) getReviews(productID string) ([]Review, error) {
-    if fe.reviewSvcAddr == "" {
-        return nil, fmt.Errorf("reviewSvcAddr not set")
-    }
-    url := fmt.Sprintf("http://%s/reviews?productID=%s", fe.reviewSvcAddr, productID)
-    resp, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer resp.Body.Close()
-    if resp.StatusCode != http.StatusOK {
-        return nil, fmt.Errorf("reviewservice returned status %d", resp.StatusCode)
-    }
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return nil, err
-    }
-    var reviews []Review
-    if err := json.Unmarshal(body, &reviews); err != nil {
-        return nil, err
-    }
-    return reviews, nil
-}
+// move getReviews to rpc.go
 
 
-func (fe *frontendServer) translateText(text, lang string) (string, error) {
-    if fe.translationSvcAddr == "" {
-        return "", fmt.Errorf("translationSvcAddr not set")
-    }
-    url := fmt.Sprintf("http://%s/translate?text=%s&target=%s", fe.translationSvcAddr, text, lang)
-    resp, err := http.Get(url)
-    if err != nil {
-        return "", err
-    }
-    defer resp.Body.Close()
-    if resp.StatusCode != http.StatusOK {
-        return "", fmt.Errorf("translationservice returned status %d", resp.StatusCode)
-    }
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        return "", err
-    }
-    return string(body), nil
-}
+// func (fe *frontendServer) translateText(text, lang string) (string, error) {
+//     if fe.translationSvcAddr == "" {
+//         return "", fmt.Errorf("translationSvcAddr not set")
+//     }
+//     url := fmt.Sprintf("http://%s/translate?text=%s&target=%s", fe.translationSvcAddr, text, lang)
+//     resp, err := http.Get(url)
+//     if err != nil {
+//         return "", err
+//     }
+//     defer resp.Body.Close()
+//     if resp.StatusCode != http.StatusOK {
+//         return "", fmt.Errorf("translationservice returned status %d", resp.StatusCode)
+//     }
+//     body, err := ioutil.ReadAll(resp.Body)
+//     if err != nil {
+//         return "", err
+//     }
+//     return string(body), nil
+// }
 
 
-func (fe *frontendServer) translateReviewHandler(w http.ResponseWriter, r *http.Request) {
-    if err := r.ParseForm(); err != nil {
-        http.Error(w, "unable to parse form", http.StatusBadRequest)
-        return
-    }
-    text := r.FormValue("text")
-    lang := r.FormValue("lang")
-    if text == "" || lang == "" {
-        http.Error(w, "missing text or lang parameter", http.StatusBadRequest)
-        return
-    }
+// func (fe *frontendServer) translateReviewHandler(w http.ResponseWriter, r *http.Request) {
+//     if err := r.ParseForm(); err != nil {
+//         http.Error(w, "unable to parse form", http.StatusBadRequest)
+//         return
+//     }
+//     text := r.FormValue("text")
+//     lang := r.FormValue("lang")
+//     if text == "" || lang == "" {
+//         http.Error(w, "missing text or lang parameter", http.StatusBadRequest)
+//         return
+//     }
 
-    translated, err := fe.translateText(text, lang)
-    if err != nil {
-        http.Error(w, "translation failed", http.StatusInternalServerError)
-        return
-    }
-    w.Write([]byte(translated))
-}
+//     translated, err := fe.translateText(text, lang)
+//     if err != nil {
+//         http.Error(w, "translation failed", http.StatusInternalServerError)
+//         return
+//     }
+//     w.Write([]byte(translated))
+// }
 
 
 func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request) {
@@ -277,25 +249,45 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		log.WithField("error", err).Warn("failed to get product recommendations")
 	}
 
-	// HERE: add review box?
+    // reviews := []map[string]string{
+    //     {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
+    //     {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
+    // }
 
-    reviews := []map[string]string{
-        {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
-        {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
-    }
+	// Fetch reviews for the product
+	// reviews, err := fe.getReviews(id)
+	// if err != nil {
+	// 	log.WithField("error", err).Warn("failed to fetch reviews")
+	// 	reviews = nil // Fail gracefully by showing no reviews
+	// }
+
+	// Fetch reviews for the product
+	reviews, err := fe.getReviews(context.Background(), id)
+	if err != nil || len(reviews) == 0 {
+		log.Printf("Warning: could not fetch reviews for product %s: %v", id, err)
+		reviews = []*pb.Review{
+			{
+				ProductId: 	"OLJCESPC7Z",
+				UserId:		"Alice",
+				Comment:	"Great product!",
+				Rating:    	5,
+				
+			},
+			{
+				ProductId: 	"OLJCESPC7Z",
+				UserId:		"Bob",
+				Comment:   	"Satisfactory.",
+				Rating:    	3,
+			}, // Default to an empty list if there's an error
+	
+		}
+	}
 
 	product := struct {
 		Item  *pb.Product
 		Price *pb.Money
 		
 	}{p, price}
-
-    // Fetch reviews for the product
-	// reviews, err := fe.getReviews(id)
-	// if err != nil {
-	// 	log.Printf("Warning: could not fetch reviews for product %s: %v", id, err)
-	// 	reviews = nil // fail gracefully by showing no reviews
-	// }
 	
 
 	// templates.ExecuteTemplate(w, "product.html", map[string]interface{}{
@@ -312,6 +304,8 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	log.Printf("Fetched reviews for product %s: %+v", id, reviews)
+
 	if err := templates.ExecuteTemplate(w, "product", injectCommonTemplateData(r, map[string]interface{}{
 		"ad":              fe.chooseAd(r.Context(), p.Categories, log),
 		"show_currency":   true,
@@ -322,33 +316,91 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		"packagingInfo":   packagingInfo,
 		"reviews": 		   reviews,
 	})); err != nil {
-		log.Println(err)
+		log.Println(err)	
 	}
+	log.Printf("Reviews passed to template: %+v", reviews)
 }
 
 func (fe *frontendServer) submitReviewHandler(w http.ResponseWriter, r *http.Request) {
+    log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+
+    // Ensure the request method is POST
     if r.Method != http.MethodPost {
-        http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+        renderHTTPError(log, r, w, errors.New("method not allowed"), http.StatusMethodNotAllowed)
         return
     }
 
-    // Parse form data
-    err := r.ParseForm()
-    if err != nil {
-        http.Error(w, "Error parsing form", http.StatusBadRequest)
+    // Parse form values
+    if err := r.ParseForm(); err != nil {
+        renderHTTPError(log, r, w, errors.Wrap(err, "unable to parse form"), http.StatusBadRequest)
         return
     }
 
+    // Extract and validate form data
+    productID := r.FormValue("product_id")
     comment := r.FormValue("comment")
-    rating := r.FormValue("rating")
-    productID := r.URL.Query().Get("id") // You might need to ensure product ID is passed
+    rating, err := strconv.Atoi(r.FormValue("rating"))
+    if err != nil || rating < 1 || rating > 5 {
+        renderHTTPError(log, r, w, errors.New("invalid rating value"), http.StatusBadRequest)
+        return
+    }
+    if productID == "" || comment == "" {
+        renderHTTPError(log, r, w, errors.New("missing required fields"), http.StatusBadRequest)
+        return
+    }
 
-    // Send review data to the review service (placeholder logic here)
-    log.Printf("Received review for Product ID %s: %s (%s/5)", productID, comment, rating)
+	req := &pb.SubmitReviewRequest{
+		UserId:    sessionID(r), // Pass a valid user ID
+		ProductId: productID,
+		Comment:   comment,
+		Rating:    int32(rating),
+	}
+
+    // Call the gRPC method to submit the review
+	client := pb.NewReviewServiceClient(fe.reviewSvcConn)
+	_, err = client.SubmitReview(r.Context(), req)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"grpc_error": err,
+			"review_request": req,
+			"review_service_address": fe.reviewSvcAddr,
+		}).Error("failed to submit review to review service")
+		renderHTTPError(log, r, w, errors.Wrap(err, "failed to submit review"), http.StatusInternalServerError)
+		log.Infof("Review Service Address: %s", fe.reviewSvcAddr)
+		return
+	}
 
     // Redirect back to the product page
-    http.Redirect(w, r, fmt.Sprintf("/product?id=%s", productID), http.StatusSeeOther)
+    http.Redirect(w, r, "/product/"+productID, http.StatusFound)
 }
+
+func (fe *frontendServer) getReviewHandler(w http.ResponseWriter, r *http.Request) {
+    log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+
+    // Extract product ID from the URL
+    productID := mux.Vars(r)["id"]
+    if productID == "" {
+        http.Error(w, "Product ID is required", http.StatusBadRequest)
+        return
+    }
+
+    // Fetch reviews for the product
+    reviews, err := fe.getReviews(r.Context(), productID)
+    if err != nil {
+        log.WithError(err).Error("Failed to fetch reviews")
+        http.Error(w, "Failed to fetch reviews", http.StatusInternalServerError)
+        return
+    }
+
+    // Respond with JSON
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(reviews); err != nil {
+        log.WithError(err).Error("Failed to encode reviews")
+        http.Error(w, "Failed to encode reviews", http.StatusInternalServerError)
+    }
+}
+
+
 
 
 func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Request) {

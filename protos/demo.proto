@@ -265,15 +265,14 @@ message Ad {
 
 service ReviewService {
     rpc GetReviews(GetReviewsRequest) returns (GetReviewsResponse);
-    rpc SubmitReview(AddReviewRequest) returns (AddReviewResponse);
+    rpc SubmitReview(SubmitReviewRequest) returns (SubmitReviewResponse);
 }
 
 message Review {
-    string user_id = 1;
-    string comment = 2;       // Original review text.
-    int32 rating = 3;         // Rating (e.g., 1-5 stars).
-    string timestamp = 4;     // Time of review submission.
-    repeated string translations = 5; // Translations for the review.
+    string product_id = 1;
+    string user_id = 2;
+    string comment = 3;       // Original review text.
+    int32 rating = 4;         // Rating (e.g., 1-5 stars).    // Time of review submission. //repeated string translations = 6; // Translations for the review.
 }
 
 message GetReviewsRequest {
@@ -284,15 +283,15 @@ message GetReviewsResponse {
     repeated Review reviews = 1; 
 }
 
-message AddReviewRequest {
+message SubmitReviewRequest {
     string product_id = 1;  
     string user_id = 2;     
     string comment = 3;     
     int32 rating = 4;       
-    repeated string target_languages = 5; // Desired translation languages.
+    //repeated string target_languages = 5; // Desired translation languages.
 }
 
-message AddReviewResponse {
+message SubmitReviewResponse {
     string review_id = 1;   
 }
 

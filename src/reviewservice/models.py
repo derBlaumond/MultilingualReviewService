@@ -6,5 +6,5 @@ class Review(BaseModel):
     user_id: int
     rating: int
     content: str
-    language: str
-    translations: Optional[Dict[str, str]] = {}
+    #language: str
+    #translations: Optional[Dict[str, str]] = {}

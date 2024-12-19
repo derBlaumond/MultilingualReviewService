@@ -12,13 +12,13 @@ def run():
             user_id=456,
             rating=5,
             content="This is a gRPC test review!",
-            language="en"
+            #language="en" # Take out Language here as well
         )
         response = stub.AddReview(demo_pb2.AddReviewRequest(review=review))
         print("AddReview Response:", response)
 
         # Test GetReviews
-        get_response = stub.GetReviews(demo_pb2.GetReviewsRequest(product_id=123, language="en"))
+        get_response = stub.GetReviews(demo_pb2.GetReviewsRequest(product_id=123)) ## Take out language="en"
         print("GetReviews Response:", get_response)
 
 if __name__ == "__main__":
