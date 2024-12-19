@@ -249,18 +249,6 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		log.WithField("error", err).Warn("failed to get product recommendations")
 	}
 
-    // reviews := []map[string]string{
-    //     {"User": "Alice", "Comment": "Great product!", "Rating": "5", "Timestamp": "2024-12-10"},
-    //     {"User": "Bob", "Comment": "Satisfactory.", "Rating": "3", "Timestamp": "2024-12-09"},
-    // }
-
-	// Fetch reviews for the product
-	// reviews, err := fe.getReviews(id)
-	// if err != nil {
-	// 	log.WithField("error", err).Warn("failed to fetch reviews")
-	// 	reviews = nil // Fail gracefully by showing no reviews
-	// }
-
 	// Fetch reviews for the product
 	reviews, err := fe.getReviews(context.Background(), id)
 	if err != nil || len(reviews) == 0 {
@@ -278,7 +266,7 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 				UserId:		"Bob",
 				Comment:   	"Satisfactory.",
 				Rating:    	3,
-			}, // Default to an empty list if there's an error
+			}, 
 	
 		}
 	}
@@ -289,11 +277,6 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		
 	}{p, price}
 	
-
-	// templates.ExecuteTemplate(w, "product.html", map[string]interface{}{
-	// 	"product": product,
-	// 	"reviews": reviews, // This must be correctly populated
-	// })
 	// Fetch packaging info (weight/dimensions) of the product
 	// The packaging service is an optional microservice you can run as part of a Google Cloud demo.
 	var packagingInfo *PackagingInfo = nil
